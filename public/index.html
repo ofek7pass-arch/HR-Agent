@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סוכן משרות</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#1d4ed8; --accent-soft:#eff4ff;
+    --new:#2563eb; --interested:#7c3aed; --applied:#0891b2;
+    --interview:#ca8a04; --offer:#16a34a; --rejected:#dc2626; --archived:#9ca3af;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1115; --card:#171a21; --ink:#e5e7eb; --muted:#9ca3af; --line:#272b34;
+           --accent:#60a5fa; --accent-soft:#1a2233; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px}
+
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:22px;margin:0;font-weight:700}
+  .tabs{display:flex;gap:4px;margin-right:auto}
+  .tab{padding:8px 16px;border-radius:8px;border:1px solid transparent;cursor:pointer;
+       background:none;color:var(--muted);font:inherit;font-weight:600}
+  .tab.on{background:var(--card);border-color:var(--line);color:var(--ink)}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .stat b{display:block;font-size:24px;line-height:1.2}
+  .stat span{color:var(--muted);font-size:12.5px}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .chip{padding:6px 13px;border-radius:20px;border:1px solid var(--line);background:var(--card);
+        cursor:pointer;font:inherit;font-size:13.5px;color:var(--muted)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  input,select,textarea{font:inherit;padding:8px 11px;border:1px solid var(--line);
+        border-radius:8px;background:var(--card);color:var(--ink)}
+  input[type=search]{flex:1;min-width:200px}
+
+  .job{background:var(--card);border:1px solid var(--line);border-radius:10px;
+       padding:14px 16px;margin-bottom:10px;display:grid;
+       grid-template-columns:1fr auto;gap:10px 16px;align-items:start}
+  .job h3{margin:0 0 5px;font-size:16px;font-weight:600}
+  .job h3 a{text-decoration:none}
+  .job h3 a:hover{text-decoration:underline}
+  .meta{color:var(--muted);font-size:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{padding:2px 9px;border-radius:5px;font-size:11.5px;font-weight:700;color:#fff}
+  .b-alljobs{background:#0d9488}.b-linkedin{background:#0a66c2}
+  .b-whatsapp{background:#25d366}.b-facebook{background:#1877f2}
+  .score{background:var(--accent-soft);color:var(--accent);padding:2px 8px;
+         border-radius:5px;font-size:12px;font-weight:700}
+  .desc{color:var(--muted);font-size:13.5px;margin-top:7px;white-space:pre-wrap;
+        max-height:4.6em;overflow:hidden;cursor:pointer}
+  .desc.open{max-height:none}
+  .side{display:flex;flex-direction:column;gap:7px;align-items:stretch;min-width:150px}
+  .side select{font-size:13.5px;font-weight:600}
+  .note{width:100%;font-size:13px;resize:vertical;min-height:34px}
+  .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12.5px;padding:2px}
+  .del:hover{color:var(--rejected)}
+
+  .s-new{border-right:4px solid var(--new)}
+  .s-interested{border-right:4px solid var(--interested)}
+  .s-applied{border-right:4px solid var(--applied)}
+  .s-interview{border-right:4px solid var(--interview)}
+  .s-offer{border-right:4px solid var(--offer)}
+  .s-rejected{border-right:4px solid var(--rejected);opacity:.6}
+  .s-archived{border-right:4px solid var(--archived);opacity:.55}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;font-size:16px}
+  .panel p.hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-weight:600;font-size:13.5px;margin-bottom:4px}
+  .field small{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+  .field input,.field textarea{width:100%}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  button.primary{background:var(--accent);color:#fff;border:none;border-radius:8px;
+                 padding:10px 22px;font:inherit;font-weight:600;cursor:pointer}
+  button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);
+               border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px}
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);
+         color:var(--bg);padding:11px 22px;border-radius:8px;font-size:14px;
+         opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+  #toast.show{opacity:1}
+  @media(max-width:700px){ .job{grid-template-columns:1fr} .row{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>סוכן משרות</h1>
+    <div class="tabs">
+      <button class="tab on" data-view="board">מאגר המשרות</button>
+      <button class="tab" data-view="settings">הגדרות</button>
+    </div>
+  </header>
+
+  <!-- ===== מאגר ===== -->
+  <section id="board">
+    <div class="stats" id="stats"></div>
+
+    <div class="filters">
+      <button class="chip on" data-status="all">הכל</button>
+      <button class="chip" data-status="new">חדשות</button>
+      <button class="chip" data-status="interested">מעניין</button>
+      <button class="chip" data-status="applied">הגשתי</button>
+      <button class="chip" data-status="interview">ראיון</button>
+      <button class="chip" data-status="offer">הצעה</button>
+      <button class="chip" data-status="rejected">נדחה</button>
+      <button class="chip" data-status="archived">בארכיון</button>
+      <select id="fSource">
+        <option value="all">כל המקורות</option>
+        <option value="alljobs">אול ג׳ובס</option>
+        <option value="linkedin">לינקדין</option>
+        <option value="whatsapp">וואטסאפ</option>
+        <option value="facebook">פייסבוק</option>
+      </select>
+      <input type="search" id="fSearch" placeholder="חיפוש בכותרת, חברה, מיקום או תיאור…">
+    </div>
+
+    <div id="list"></div>
+  </section>
+
+  <!-- ===== הגדרות ===== -->
+  <section id="settings" hidden></section>
+</div>
+<div id="toast"></div>
+
+<script>
+const STATUS_HE = { new:'חדשה', interested:'מעניין', applied:'הגשתי',
+                    interview:'ראיון', offer:'הצעה', rejected:'נדחה', archived:'ארכיון' };
+const SOURCE_HE = { alljobs:'אול ג׳ובס', linkedin:'לינקדין', whatsapp:'וואטסאפ', facebook:'פייסבוק' };
+
+let filters = { status:'all', source:'all', search:'' };
+let config = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? '').toString()
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function ageText(h){
+  if (h == null) return '';
+  if (h < 1) return 'זה עתה';
+  if (h < 24) return `לפני ${Math.round(h)} שעות`;
+  const d = Math.round(h/24);
+  return d === 1 ? 'אתמול' : `לפני ${d} ימים`;
+}
+
+// ---------- מאגר ----------
+async function loadStats(){
+  const s = await (await fetch('/api/stats')).json();
+  const cells = [
+    ['סה״כ במאגר', s.total],
+    ['נמצאו היום', s.today],
+    ['חדשות', s.byStatus.new || 0],
+    ['מעניין', s.byStatus.interested || 0],
+    ['הגשתי', s.byStatus.applied || 0],
+    ['ראיון', s.byStatus.interview || 0],
+  ];
+  $('#stats').innerHTML = cells
+    .map(([label, n]) => `<div class="stat"><b>${n}</b><span>${label}</span></div>`).join('');
+}
+
+async function loadJobs(){
+  const q = new URLSearchParams(filters);
+  const jobs = await (await fetch('/api/jobs?' + q)).json();
+
+  if (!jobs.length){
+    $('#list').innerHTML = '<div class="empty">אין משרות שתואמות את הסינון.</div>';
+    return;
+  }
+
+  $('#list').innerHTML = jobs.map(j => {
+    const opts = Object.entries(STATUS_HE)
+      .map(([v,l]) => `<option value="${v}"${j.status===v?' selected':''}>${l}</option>`).join('');
+    const title = j.url
+      ? `<a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a>`
+      : esc(j.title);
+    const meta = [
+      j.company && esc(j.company),
+      j.location && esc(j.location),
+      j.job_type && esc(j.job_type),
+      ageText(j.age_hours),
+      j.source_detail && esc(j.source_detail),
+    ].filter(Boolean).join(' · ');
+
+    return `<article class="job s-${j.status}" data-id="${esc(j.id)}">
+      <div>
+        <h3>${title}</h3>
+        <div class="meta">
+          <span class="badge b-${j.source}">${SOURCE_HE[j.source] || j.source}</span>
+          ${j.score ? `<span class="score">התאמה ${j.score}</span>` : ''}
+          ${meta ? `<span>${meta}</span>` : ''}
+        </div>
+        ${j.description ? `<div class="desc" title="לחץ להרחבה">${esc(j.description)}</div>` : ''}
+      </div>
+      <div class="side">
+        <select class="st">${opts}</select>
+        <textarea class="note" placeholder="הערות…">${esc(j.notes)}</textarea>
+        <button class="del">מחק מהמאגר</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+async function patchJob(id, body){
+  const r = await (await fetch(`/api/jobs/${encodeURIComponent(id)}`, {
+    method:'PATCH', headers:{'content-type':'application/json'}, body:JSON.stringify(body)
+  })).json();
+  if (!r.ok) toast('העדכון נכשל');
+  return r.ok;
+}
+
+// אירועים בהאצלה — הרשימה נבנית מחדש בכל טעינה
+$('#list').addEventListener('change', async e => {
+  const card = e.target.closest('.job'); if (!card) return;
+  const id = card.dataset.id;
+  if (e.target.classList.contains('st')){
+    if (await patchJob(id, { status: e.target.value })){
+      card.className = `job s-${e.target.value}`;
+      toast('הסטטוס עודכן'); loadStats();
+    }
+  }
+});
+$('#list').addEventListener('blur', async e => {
+  if (!e.target.classList?.contains('note')) return;
+  const card = e.target.closest('.job');
+  if (await patchJob(card.dataset.id, { notes: e.target.value })) toast('ההערה נשמרה');
+}, true);
+$('#list').addEventListener('click', async e => {
+  if (e.target.classList.contains('desc')) { e.target.classList.toggle('open'); return; }
+  if (!e.target.classList.contains('del')) return;
+  const card = e.target.closest('.job');
+  if (!confirm('למחוק את המשרה מהמאגר? היא עשויה לחזור בסריקה הבאה.')) return;
+  await fetch(`/api/jobs/${encodeURIComponent(card.dataset.id)}`, { method:'DELETE' });
+  card.remove(); loadStats(); toast('נמחק');
+});
+
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on'); filters.status = c.dataset.status; loadJobs();
+}));
+$('#fSource').addEventListener('change', e => { filters.source = e.target.value; loadJobs(); });
+let searchTimer;
+$('#fSearch').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { filters.search = e.target.value.trim(); loadJobs(); }, 300);
+});
+
+// ---------- הגדרות ----------
+const lines = a => (a || []).join('\n');
+const parseLines = s => s.split('\n').map(x => x.trim()).filter(Boolean);
+
+async function renderSettings(){
+  config = await (await fetch('/api/settings')).json();
+  const c = config.criteria || {}, s = config.sources || {}, n = config.notifications || {};
+
+  $('#settings').innerHTML = `
+    <div class="panel">
+      <h2>קריטריונים</h2>
+      <p class="hint">שורה אחת לכל ביטוי. מילת מפתח חסרה מורידה ניקוד — לא פוסלת. רק "מילות פסילה" פוסלות.</p>
+      <div class="row">
+        <div class="field">
+          <label>מילות מפתח נדרשות</label>
+          <small>משרה חייבת להכיל לפחות אחת מהן</small>
+          <textarea id="cMust" rows="8">${esc(lines(c.mustAny))}</textarea>
+        </div>
+        <div class="field">
+          <label>בונוס</label>
+          <small>מעלות את ציון ההתאמה בלבד</small>
+          <textarea id="cBonus" rows="8">${esc(lines(c.bonus))}</textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>מילות פסילה</label>
+          <small>בכל מקום בטקסט</small>
+          <textarea id="cExc" rows="5">${esc(lines(c.exclude))}</textarea>
+        </div>
+        <div class="field">
+          <label>מילות פסילה בכותרת בלבד</label>
+          <small>למשל "סטודנט" — כדי לא לפסול משרה שרק מזכירה סטודנטים</small>
+          <textarea id="cExcT" rows="5">${esc(lines(c.excludeTitleOnly))}</textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>מיקומים מועדפים</label>
+          <small>בונוס בלבד</small>
+          <textarea id="cLoc" rows="5">${esc(lines(c.locations))}</textarea>
+        </div>
+        <div>
+          <div class="field">
+            <label>ניקוד מינימלי לשמירה במאגר</label>
+            <input type="number" id="cMin" value="${c.minScore ?? 0}">
+          </div>
+          <div class="field">
+            <label>גיל מרבי של מודעה (שעות)</label>
+            <small>336 = שבועיים. ריק = ללא הגבלה</small>
+            <input type="number" id="cAge" value="${c.maxAgeHours ?? ''}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>מקורות</h2>
+      <p class="hint">שאילתות החיפוש שיישלחו לכל מקור. שורה אחת לכל שאילתה.</p>
+      <div class="row">
+        <div class="field">
+          <label><input type="checkbox" id="sAjOn" ${s.alljobs?.enabled?'checked':''}> אול ג׳ובס</label>
+          <textarea id="sAjQ" rows="6">${esc(lines(s.alljobs?.queries))}</textarea>
+          <small style="margin-top:5px">אזורים (חיפה / מרכז / ירושלים / דרום / צפון / עבודה מהבית)</small>
+          <input id="sAjR" value="${esc((s.alljobs?.regions || []).join(', '))}">
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="sLiOn" ${s.linkedin?.enabled?'checked':''}> לינקדין</label>
+          <textarea id="sLiQ" rows="6">${esc(lines(s.linkedin?.queries))}</textarea>
+          <small style="margin-top:5px">חלון זמן</small>
+          <select id="sLiSince">
+            <option value="day"${s.linkedin?.since==='day'?' selected':''}>24 שעות</option>
+            <option value="week"${s.linkedin?.since==='week'?' selected':''}>שבוע</option>
+            <option value="month"${s.linkedin?.since==='month'?' selected':''}>חודש</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="sWaOn" ${s.whatsapp?.enabled?'checked':''}> קבוצות וואטסאפ</label>
+        <small>שורה לכל קבוצה בפורמט <code>chatId | שם הקבוצה</code>. את ה-chatId מקבלים מ־<a href="/api/whatsapp-groups" target="_blank">/api/whatsapp-groups</a></small>
+        <textarea id="sWaG" rows="4">${esc((s.whatsapp?.groups || []).map(g => `${g.chatId} | ${g.name}`).join('\n'))}</textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>התראה יומית</h2>
+      <p class="hint">הודעת וואטסאפ אחת ביום — ורק אם נמצאו משרות מעל סף ההתראה.</p>
+      <div class="row">
+        <div class="field"><label>שעת שליחה</label><input type="time" id="nTime" value="${esc(n.dailyDigestTime || '09:00')}"></div>
+        <div class="field"><label>ניקוד מינימלי להתראה</label><input type="number" id="nMin" value="${n.minScoreForDigest ?? 0}"></div>
+      </div>
+      <div class="field"><label>מקסימום משרות בהודעה</label><input type="number" id="nMax" value="${n.maxJobsInDigest ?? 10}"></div>
+      <div class="field">
+        <label>נמענים</label>
+        <small>שורה לכל נמען: <code>שם | טלפון | אימייל</code></small>
+        <textarea id="nRec" rows="3">${esc((n.recipients || []).map(r => `${r.name} | ${r.phone || ''} | ${r.email || ''}`).join('\n'))}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:30px">
+      <button class="primary" id="save">שמור הגדרות</button>
+      <button class="ghost" id="testDigest">בדוק דיג׳סט (ללא שליחה)</button>
+      <button class="ghost" id="check">בדיקת חיבורים</button>
+    </div>`;
+
+  $('#save').onclick = saveSettings;
+  $('#testDigest').onclick = async () => {
+    const r = await (await fetch('/api/send-digest?dryrun=1', { method:'POST' })).json();
+    toast(r.count ? `${r.count} משרות היו נשלחות עכשיו` : 'אין משרות מעל הסף');
+  };
+  $('#check').onclick = async () => {
+    const r = await (await fetch('/api/notif-check')).json();
+    alert(`וואטסאפ: ${r.whatsapp.ok ? r.whatsapp.state : 'שגיאה — ' + (r.whatsapp.error || r.whatsapp.status)}
+מפתח Brevo: ${r.brevoKey ? 'קיים' : 'חסר'}
+נמענים פעילים: ${r.recipients.filter(x => x.enabled !== false).length}
+ממתינות לשליחה: ${r.pending}
+שעת דיג׳סט: ${r.digestTime}`);
+  };
+}
+
+async function saveSettings(){
+  const groups = parseLines($('#sWaG').value).map(l => {
+    const [chatId, name] = l.split('|').map(x => x.trim());
+    return { chatId, name: name || chatId };
+  }).filter(g => g.chatId);
+
+  const recipients = parseLines($('#nRec').value).map(l => {
+    const [name, phone, email] = l.split('|').map(x => x.trim());
+    return { name, phone: phone || '', email: email || '', enabled: true };
+  }).filter(r => r.name);
+
+  const ageVal = $('#cAge').value.trim();
+
+  const body = {
+    criteria: {
+      mustAny: parseLines($('#cMust').value),
+      bonus: parseLines($('#cBonus').value),
+      exclude: parseLines($('#cExc').value),
+      excludeTitleOnly: parseLines($('#cExcT').value),
+      locations: parseLines($('#cLoc').value),
+      minScore: +$('#cMin').value || 0,
+      maxAgeHours: ageVal === '' ? null : +ageVal,
+    },
+    sources: {
+      alljobs: { enabled: $('#sAjOn').checked, queries: parseLines($('#sAjQ').value),
+                 regions: $('#sAjR').value.split(',').map(x => x.trim()).filter(Boolean) },
+      linkedin: { enabled: $('#sLiOn').checked, queries: parseLines($('#sLiQ').value),
+                  since: $('#sLiSince').value },
+      whatsapp: { enabled: $('#sWaOn').checked, groups },
+    },
+    notifications: {
+      dailyDigestTime: $('#nTime').value,
+      minScoreForDigest: +$('#nMin').value || 0,
+      maxJobsInDigest: +$('#nMax').value || 10,
+      recipients,
+    },
+  };
+
+  const r = await (await fetch('/api/settings', {
+    method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)
+  })).json();
+  toast(r.ok ? 'ההגדרות נשמרו' : 'השמירה נכשלה');
+}
+
+// ---------- ניווט ----------
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  const board = t.dataset.view === 'board';
+  $('#board').hidden = !board;
+  $('#settings').hidden = board;
+  if (board) { loadStats(); loadJobs(); } else renderSettings();
+}));
+
+loadStats();
+loadJobs();
+</script>
+</body>
+</html>
