@@ -45,8 +45,34 @@ function loadConfig() {
   }
 }
 
+const HISTORY_DIR = path.join(DATA_DIR, 'config-history');
+const HISTORY_KEEP = 20;
+
+/**
+ * שומר עותק של ההגדרות *הקודמות* לפני כל כתיבה.
+ *
+ * למה: שמירה דורסת את כל המקטע שנשלח, ומספיקה קריאת API אחת רחבה מדי
+ * כדי למחוק שעה של כוונון ידני. זה קרה ב-14.09.2026 ולא הייתה דרך לשחזר.
+ */
+function backupConfig() {
+  if (!fs.existsSync(CONFIG_PATH)) return;
+  try {
+    if (!fs.existsSync(HISTORY_DIR)) fs.mkdirSync(HISTORY_DIR, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.copyFileSync(CONFIG_PATH, path.join(HISTORY_DIR, `config-${stamp}.json`));
+
+    // שומרים רק את האחרונים — אין טעם בהיסטוריה אינסופית
+    const files = fs.readdirSync(HISTORY_DIR).filter(f => f.startsWith('config-')).sort();
+    files.slice(0, Math.max(0, files.length - HISTORY_KEEP))
+         .forEach(f => fs.unlinkSync(path.join(HISTORY_DIR, f)));
+  } catch (err) {
+    console.error('[config] גיבוי נכשל:', err.message);
+  }
+}
+
 function saveConfig(cfg) {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  backupConfig();
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
 }
 
@@ -97,6 +123,42 @@ app.post('/api/jobs/clear', (req, res) => {
 });
 
 app.get('/api/settings', (_req, res) => res.json(loadConfig()));
+
+/** גרסאות קודמות של ההגדרות — החדשה ביותר ראשונה */
+app.get('/api/settings/history', (_req, res) => {
+  try {
+    const files = fs.readdirSync(HISTORY_DIR).filter(f => f.startsWith('config-')).sort().reverse();
+    res.json(files.map(f => ({
+      file: f,
+      savedAt: f.replace('config-', '').replace('.json', '').replace(/-/g, ':'),
+      size: fs.statSync(path.join(HISTORY_DIR, f)).size,
+    })));
+  } catch { res.json([]); }
+});
+
+/** מציג גרסה קודמת (בלי לשחזר) */
+app.get('/api/settings/history/:file', (req, res) => {
+  const name = path.basename(req.params.file); // חוסם ../ בנתיב
+  try {
+    res.json(JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, name), 'utf8')));
+  } catch (err) {
+    res.status(404).json({ ok: false, error: err.message });
+  }
+});
+
+/** משחזר גרסה קודמת. הגרסה הנוכחית מגובה קודם, כך שגם השחזור הפיך. */
+app.post('/api/settings/restore/:file', (req, res) => {
+  const name = path.basename(req.params.file);
+  try {
+    const old = JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, name), 'utf8'));
+    saveConfig(old);
+    scheduleDigest();
+    console.log(`[config] שוחזר מ-${name}`);
+    res.json({ ok: true, config: loadConfig() });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
 
 app.post('/api/settings', (req, res) => {
   try {
