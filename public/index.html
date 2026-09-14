@@ -296,8 +296,16 @@ async function renderSettings(){
       <div class="row">
         <div class="field">
           <label>מיקומים מועדפים</label>
-          <small>בונוס בלבד</small>
+          <small>שורה לכל עיר. אול ג׳ובס מתעלם מסינון אזור משלו ומחזיר משרות
+            מכל הארץ — הסינון היחיד שבאמת עובד הוא כאן.</small>
           <textarea id="cLoc" rows="5">${esc(lines(c.locations))}</textarea>
+          <label style="font-weight:normal;margin-top:7px">
+            <input type="checkbox" id="cLocReq" ${c.requireLocation ? 'checked' : ''}>
+            פסול משרות מחוץ לרשימה
+          </label>
+          <small>ללא סימון — הרשימה נותנת בונוס בלבד (+15) ומשרות רחוקות נכנסות
+            בדירוג נמוך. עם סימון — הן נחסמות. משרה ללא מיקום תמיד עוברת.
+            <b>שים לב:</b> אם מסמנים, הרשימה חייבת להיות מקיפה — כל עיר שחסרה בה תיחסם.</small>
         </div>
         <div>
           <div class="field">
@@ -426,6 +434,7 @@ async function saveSettings(){
       exclude: parseLines($('#cExc').value),
       excludeTitleOnly: parseLines($('#cExcT').value),
       locations: parseLines($('#cLoc').value),
+      requireLocation: $('#cLocReq').checked,
       minScore: +$('#cMin').value || 0,
       maxAgeHours: ageVal === '' ? null : +ageVal,
     },

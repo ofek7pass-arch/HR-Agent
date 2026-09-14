@@ -88,7 +88,8 @@ function evaluate(job, criteria = {}) {
     exclude = [],           // מילות פסילה בכל מקום בטקסט
     excludeTitleOnly = [],  // פוסלות רק אם מופיעות בכותרת
     bonus = [],             // מעלות ניקוד בלבד
-    locations = [],         // ערים/אזורים מועדפים — בונוס, לא חובה
+    locations = [],         // ערים מועדפות
+    requireLocation = false,// true = רשימת המיקומים הופכת לסינון קשיח, לא רק בונוס
     maxAgeHours = null,     // מבוגר מזה נפסל (null = ללא הגבלה)
     minScore = 0,
   } = criteria;
@@ -128,6 +129,19 @@ function evaluate(job, criteria = {}) {
 
   const locHits = hasAny(job.location || '', locations);
   if (locHits.length) { score += 15; matched.push(...locHits); }
+
+  /*
+   * סינון גאוגרפי קשיח (אופציונלי).
+   * נדרש כי אול ג'ובס מתעלם מפרמטר האזור שלו ומחזיר משרות מכל הארץ —
+   * עפולה, יקנעם ונהריה הגיעו למאגר שמוגדר "מרכז". כאן זה נחתך אצלנו.
+   *
+   * משרה בלי מיקום *עוברת*: לינקדין ווואטסאפ לא תמיד מציינים אחד, ואין סיבה
+   * לפסול משרה טובה על שדה חסר. אותו עיקרון כמו גיל לא ידוע.
+   * מודעות אול ג'ובס מציינות כמה ערים — התאמה לאחת מהן מספיקה.
+   */
+  if (requireLocation && locations.length && job.location && !locHits.length) {
+    reasons.push(`מיקום מחוץ לאזור המבוקש: ${job.location}`);
+  }
 
   // טריות — משרה בת שעתיים שווה יותר מאחת בת שבוע
   if (job.age_hours != null) {
