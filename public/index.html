@@ -356,10 +356,23 @@ async function renderSettings(){
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-bottom:30px">
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
       <button class="primary" id="save">שמור הגדרות</button>
       <button class="ghost" id="testDigest">בדוק דיג׳סט (ללא שליחה)</button>
       <button class="ghost" id="check">בדיקת חיבורים</button>
+    </div>
+
+    <div class="panel" style="border-color:var(--rejected)">
+      <h2>ניקוי המאגר</h2>
+      <p class="hint">כשמחליפים תחום חיפוש, המשרות הישנות נשארות תקועות במאגר —
+        הן לא ייסרקו שוב ולכן הניקוד שלהן לא יתעדכן. כאן מנקים אותן.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="ghost" id="clearKeep">נקה מאגר — שמור על מה שטיפלתי בו</button>
+        <button class="ghost" id="clearAll" style="color:var(--rejected)">מחק הכל</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">
+        הכפתור הראשון מוחק משרות בסטטוס "חדשה", "נדחה" ו"ארכיון", ומשאיר
+        "מעניין", "הגשתי", "ראיון" ו"הצעה". השני מוחק בלי יוצא מן הכלל.</p>
     </div>`;
 
   $('#save').onclick = saveSettings;
@@ -367,6 +380,21 @@ async function renderSettings(){
     const r = await (await fetch('/api/send-digest?dryrun=1', { method:'POST' })).json();
     toast(r.count ? `${r.count} משרות היו נשלחות עכשיו` : 'אין משרות מעל הסף');
   };
+  async function doClear(everything) {
+    const s = await (await fetch('/api/stats')).json();
+    const what = everything
+      ? `למחוק את כל ${s.total} המשרות מהמאגר? כולל אלה שהגשת אליהן.`
+      : `למחוק משרות שלא טיפלת בהן? (מתוך ${s.total} במאגר)`;
+    if (!confirm(what + '\n\nאי אפשר לבטל.')) return;
+    if (everything && !confirm('בטוח? גם "הגשתי" ו"ראיון" יימחקו.')) return;
+
+    const r = await (await fetch(`/api/jobs/clear${everything ? '?everything=1' : ''}`,
+                                { method: 'POST' })).json();
+    toast(r.ok ? `נמחקו ${r.deleted} משרות · נשארו ${r.remaining}` : 'הניקוי נכשל');
+  }
+  $('#clearKeep').onclick = () => doClear(false);
+  $('#clearAll').onclick  = () => doClear(true);
+
   $('#check').onclick = async () => {
     const r = await (await fetch('/api/notif-check')).json();
     alert(`וואטסאפ: ${r.whatsapp.ok ? r.whatsapp.state : 'שגיאה — ' + (r.whatsapp.error || r.whatsapp.status)}

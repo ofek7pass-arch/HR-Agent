@@ -79,6 +79,23 @@ app.patch('/api/jobs/:id', (req, res) => {
 
 app.delete('/api/jobs/:id', (req, res) => res.json({ ok: store.remove(req.params.id) > 0 }));
 
+/**
+ * ניקוי המאגר. ברירת המחדל משאירה משרות שטיפלת בהן;
+ * ?everything=1 מוחק גם אותן.
+ */
+app.post('/api/jobs/clear', (req, res) => {
+  try {
+    const deleted = store.clear({
+      everything: req.query.everything === '1',
+      source: req.query.source,
+    });
+    console.log(`[clear] נמחקו ${deleted} משרות`);
+    res.json({ ok: true, deleted, remaining: store.stats().total });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.get('/api/settings', (_req, res) => res.json(loadConfig()));
 
 app.post('/api/settings', (req, res) => {

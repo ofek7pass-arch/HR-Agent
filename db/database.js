@@ -132,6 +132,23 @@ function remove(id) {
   return db.prepare('DELETE FROM jobs WHERE id = ?').run(id).changes;
 }
 
+/**
+ * ניקוי המאגר. משמש כשעוברים תחום חיפוש — המשרות הישנות כבר לא רלוונטיות
+ * ולא ייסרקו שוב, ולכן יישארו תקועות עם ניקוד של קריטריונים שכבר לא קיימים.
+ *
+ * ברירת המחדל שומרת על כל מה שטיפלת בו (הגשת, ראיון, הצעה) — אין סיבה
+ * שהיסטוריית החיפוש שלך תימחק רק כי החלפת מילות מפתח.
+ * `everything: true` מוחק הכל בלי יוצא מן הכלל.
+ */
+function clear({ everything = false, source } = {}) {
+  const where = [];
+  const params = [];
+  if (!everything) where.push("status IN ('new','rejected','archived')");
+  if (source && source !== 'all') { where.push('source = ?'); params.push(source); }
+  const sql = `DELETE FROM jobs ${where.length ? 'WHERE ' + where.join(' AND ') : ''}`;
+  return db.prepare(sql).run(...params).changes;
+}
+
 /** מונים לכותרת הדשבורד */
 function stats() {
   const byStatus = {};
@@ -149,5 +166,5 @@ function stats() {
 
 module.exports = {
   db, STATUSES, save, saveMany, exists, getUnnotified, markNotified,
-  query, setStatus, setNotes, remove, stats,
+  query, setStatus, setNotes, remove, clear, stats,
 };
