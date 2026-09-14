@@ -5,3 +5,7 @@ data/
 dist/
 .DS_Store
 chrome-profile/
+
+# סקריפטים זמניים של בדיקות
+_*.js
+server.log
