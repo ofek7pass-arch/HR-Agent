@@ -122,10 +122,39 @@ app.post('/api/ingest', (req, res) => {
 
 // ---------- קליטת וואטסאפ (webhook של Green API) ----------
 
+/**
+ * רישום כל קבוצה שנראתה, גם כזו שלא מוגדרת.
+ * זה הפתרון לקבוצה שלא מופיעה ב-getContacts/getChats — פשוט ממתינים שתיכנס
+ * בה הודעה, והיא מזהה את עצמה. נשמר על ה-Volume ונקרא מ-/api/whatsapp-seen.
+ */
+const SEEN_PATH = path.join(DATA_DIR, 'seen-groups.json');
+
+function rememberGroup(chatId, chatName) {
+  if (!chatId?.endsWith('@g.us')) return;
+  let seen = {};
+  try { seen = JSON.parse(fs.readFileSync(SEEN_PATH, 'utf8')); } catch { /* קובץ חדש */ }
+  const known = seen[chatId];
+  if (known && known.name === chatName) return;
+  seen[chatId] = { name: chatName || '(ללא שם)', lastSeen: new Date().toISOString() };
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(SEEN_PATH, JSON.stringify(seen, null, 1), 'utf8');
+  if (!known) console.log(`[whatsapp] קבוצה חדשה זוהתה: "${chatName}" → ${chatId}`);
+}
+
+app.get('/api/whatsapp-seen', (_req, res) => {
+  try { res.json(JSON.parse(fs.readFileSync(SEEN_PATH, 'utf8'))); }
+  catch { res.json({}); }
+});
+
 app.post('/api/whatsapp-webhook', (req, res) => {
   // עונים 200 מיד — Green API שולח שוב כל webhook שלא נענה
   res.json({ ok: true });
   try {
+    const sd = req.body?.senderData;
+    if (req.body?.typeWebhook === 'incomingMessageReceived' && sd?.chatId) {
+      rememberGroup(sd.chatId, sd.chatName);
+    }
+
     const cfg = loadConfig();
     const groups = cfg.sources?.whatsapp?.groups || [];
     if (!cfg.sources?.whatsapp?.enabled || !groups.length) return;
