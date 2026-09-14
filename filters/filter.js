@@ -41,13 +41,28 @@ const rxCache = new Map();
  * מכדי לסבול נטיות בלי לתפוס מילים אחרות. ביטוי ארוך יותר מקבל סובלנות
  * לאות שימוש בהתחלה ולסיומת נטייה בסוף.
  */
+/**
+ * צורת זכר/נקבה שנדחפת אחרי מילה במודעות דרושים:
+ * "בקר/ית", "מנהל /ת", "כלכלן.ית", "דרוש /ה".
+ * בלי זה, "מנהל כספים" לא מוצא "מנהל/ת כספים" — וכך נכתבות רוב המודעות בעברית.
+ */
+const GENDER = '(?:\\s*[\\/.\\-]\\s*(?:יות|ית|ות|ימ|ת|ה|י))?';
+
 function buildTermRegex(term) {
   const t = norm(term);
-  const esc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const src = t.length <= 3
-    ? `(?<!${LETTER})${esc}(?!${LETTER})`
-    : `(?<!${LETTER})[${HEB_PREFIX}]?${esc}${HEB_SUFFIX}(?!${LETTER})`;
-  return new RegExp(src, 'i');
+  const words = t.split(/\s+/).filter(Boolean);
+
+  const parts = words.map((w, i) => {
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const short = w.length <= 3;
+    // אות שימוש מותרת רק בתחילת הביטוי, וסיומת נטייה רק למילה ארוכה מ-3 אותיות
+    const prefix = (i === 0 && !short) ? `[${HEB_PREFIX}]?` : '';
+    const suffix = short ? '' : HEB_SUFFIX;
+    return prefix + esc + suffix + GENDER;
+  });
+
+  // גבולות מילה רק בקצוות; בין המילים מותר רווח אחד או יותר
+  return new RegExp(`(?<!${LETTER})${parts.join('\\s+')}(?!${LETTER})`, 'i');
 }
 
 function termRegex(term) {
