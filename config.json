@@ -1,26 +1,92 @@
 {
   "_comment": "הגדרות ברירת מחדל. ניתנות לעריכה מלאה דרך טאב ההגדרות בדשבורד — לא צריך לגעת בקובץ.",
-
   "criteria": {
-    "mustAny": ["fp&a", "fpa", "בקר תקציב", "בקרה תקציבית", "מנהל כספים", "חשב", "כלכלן", "אנליסט פיננסי", "financial analyst", "controller", "finance manager", "financial planning", "בקר פיננסי", "סמנכל כספים", "cfo"],
-    "exclude": ["דרושים נהגים", "מלצר", "אבטחה", "שמירה", "ניקיון", "מכירות טלפוניות", "מוקד טלפוני"],
-    "excludeTitleOnly": ["סטודנט", "התמחות", "מתמחה", "student", "intern"],
-    "bonus": ["sap", "netsuite", "priority", "excel", "power bi", "היברידי", "hybrid", "בכיר", "senior", "manager", "מנהל", "startup", "הייטק", "saas"],
-    "locations": ["תל אביב", "רמת גן", "הרצליה", "פתח תקווה", "רעננה", "כפר סבא", "בני ברק", "נס ציונה", "עבודה מהבית"],
+    "mustAny": [
+      "fp&a",
+      "fpa",
+      "בקר תקציב",
+      "בקרה תקציבית",
+      "מנהל כספים",
+      "חשב",
+      "כלכלן",
+      "אנליסט פיננסי",
+      "financial analyst",
+      "controller",
+      "finance manager",
+      "financial planning",
+      "בקר פיננסי",
+      "סמנכל כספים",
+      "cfo"
+    ],
+    "exclude": [
+      "דרושים נהגים",
+      "מלצר",
+      "אבטחה",
+      "שמירה",
+      "ניקיון",
+      "מכירות טלפוניות",
+      "מוקד טלפוני"
+    ],
+    "excludeTitleOnly": [
+      "סטודנט",
+      "התמחות",
+      "מתמחה",
+      "student",
+      "intern"
+    ],
+    "bonus": [
+      "sap",
+      "netsuite",
+      "priority",
+      "excel",
+      "power bi",
+      "היברידי",
+      "hybrid",
+      "בכיר",
+      "senior",
+      "manager",
+      "מנהל",
+      "startup",
+      "הייטק",
+      "saas"
+    ],
+    "locations": [
+      "תל אביב",
+      "רמת גן",
+      "הרצליה",
+      "פתח תקווה",
+      "רעננה",
+      "כפר סבא",
+      "בני ברק",
+      "נס ציונה",
+      "עבודה מהבית"
+    ],
     "maxAgeHours": 336,
     "minScore": 30
   },
-
   "sources": {
     "alljobs": {
       "enabled": true,
-      "queries": ["FP&A", "בקר תקציבים", "מנהל כספים", "כלכלן", "חשב", "אנליסט פיננסי"],
-      "regions": ["מרכז"],
-      "maxPages": 3
+      "queries": [
+        "FP&A",
+        "בקר תקציבים",
+        "מנהל כספים",
+        "כלכלן",
+        "חשב",
+        "אנליסט פיננסי"
+      ],
+      "maxPages": 3,
+      "cities": [],
+      "_comment": "ערים אופציונלי. שדה region של האתר לא עובד — ראה collectors/alljobs.js"
     },
     "linkedin": {
       "enabled": true,
-      "queries": ["FP&A", "Financial Controller", "Finance Manager", "Financial Analyst"],
+      "queries": [
+        "FP&A",
+        "Financial Controller",
+        "Finance Manager",
+        "Financial Analyst"
+      ],
       "location": "Israel",
       "since": "week",
       "maxPages": 3
@@ -36,13 +102,17 @@
       "groups": []
     }
   },
-
   "notifications": {
     "dailyDigestTime": "09:00",
     "minScoreForDigest": 45,
     "maxJobsInDigest": 10,
     "recipients": [
-      { "name": "אופק", "phone": "0507226589", "email": "ofek7pass@gmail.com", "enabled": true }
+      {
+        "name": "אופק",
+        "phone": "0507226589",
+        "email": "ofek7pass@gmail.com",
+        "enabled": true
+      }
     ]
   }
 }

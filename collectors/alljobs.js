@@ -14,11 +14,17 @@ const BASE = 'https://www.alljobs.co.il';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
            '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-// אזורים לפי קודי האתר (חולצו מדף הבית)
-const REGIONS = {
-  'חיפה': 1, 'מרכז': 2, 'ירושלים': 3, 'דרום': 7, 'צפון': 10,
-  'עבודה מהבית': 11, 'גליל עליון': 14, 'גליל מערבי': 15,
-  'רמת הגולן': 16, 'גליל תחתון': 17,
+/**
+ * ⚠️ פרמטר `region` לא עובד בתצוגת האורח — אומת 14.09.2026.
+ * מרכז (2), דרום (7) וערך ריק מחזירים את אותן 30 המשרות בדיוק, אפס הבדל במזהים.
+ * האתר מקבל את הפרמטר, מתעלם ממנו, ומחזיר 200 — בדיוק כמו המלכודת של freetxt.
+ * לכן אין לולאה על אזורים: היא רק הכפילה את זמן הסריקה לאותן תוצאות.
+ *
+ * `city` דווקא כן עובד: city=779 (תל אביב) החזיר 15 משרות, city=1961 (באר שבע)
+ * החזיר 0, ואפס חפיפה ביניהן. מי שרוצה סינון גאוגרפי בצד השרת — דרך קודי ערים.
+ */
+const CITIES = {
+  'תל אביב': 779, 'פתח תקווה': 786, 'ירושלים': 1056, 'באר שבע': 1961,
 };
 
 /**
@@ -123,21 +129,32 @@ async function search({ query, region = '', city = '', type = '', maxPages = 3, 
   return out;
 }
 
-/** מריץ את כל השאילתות המוגדרות ומאחד לפי מזהה */
+/**
+ * מריץ את כל השאילתות המוגדרות ומאחד לפי מזהה.
+ * `cities` הוא אופציונלי — בלעדיו מושכים מכל הארץ, והדירוג לפי
+ * "מיקומים מועדפים" הוא שמקדם את מה שקרוב אליך.
+ */
 async function collect(config = {}) {
   const queries = config.queries || [];
-  const regions = config.regions?.length ? config.regions : [''];
+  const cityNames = config.cities?.length ? config.cities : [''];
   const byId = new Map();
 
+  if (config.regions?.length) {
+    console.warn('[alljobs] שדה "אזורים" מוגדר אך האתר מתעלם ממנו — ראה ההערה בראש הקובץ');
+  }
+
   for (const query of queries) {
-    for (const regionName of regions) {
-      const region = REGIONS[regionName] ?? regionName ?? '';
-      const jobs = await search({ query, region, maxPages: config.maxPages || 3 });
+    for (const cityName of cityNames) {
+      const city = CITIES[cityName] ?? (/^\d+$/.test(cityName) ? cityName : '');
+      if (cityName && !city) {
+        console.warn(`[alljobs] עיר לא מוכרת: "${cityName}" — מדלג על הסינון`);
+      }
+      const jobs = await search({ query, city, maxPages: config.maxPages || 3 });
       jobs.forEach(j => { if (!byId.has(j.id)) byId.set(j.id, j); });
-      console.log(`[alljobs] "${query}"${regionName ? ` (${regionName})` : ''} → ${jobs.length}`);
+      console.log(`[alljobs] "${query}"${cityName ? ` (${cityName})` : ''} → ${jobs.length}`);
     }
   }
   return [...byId.values()];
 }
 
-module.exports = { collect, search, fetchPage, REGIONS, parseAgeHours };
+module.exports = { collect, search, fetchPage, CITIES, parseAgeHours };

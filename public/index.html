@@ -320,8 +320,9 @@ async function renderSettings(){
         <div class="field">
           <label><input type="checkbox" id="sAjOn" ${s.alljobs?.enabled?'checked':''}> אול ג׳ובס</label>
           <textarea id="sAjQ" rows="6">${esc(lines(s.alljobs?.queries))}</textarea>
-          <small style="margin-top:5px">אזורים (חיפה / מרכז / ירושלים / דרום / צפון / עבודה מהבית)</small>
-          <input id="sAjR" value="${esc((s.alljobs?.regions || []).join(', '))}">
+          <small style="margin-top:5px">ערים — אופציונלי (תל אביב / פתח תקווה / ירושלים / באר שבע).
+            השאר ריק כדי למשוך מכל הארץ; "מיקומים מועדפים" למטה יקדם את הקרובות אליך.</small>
+          <input id="sAjR" value="${esc((s.alljobs?.cities || []).join(', '))}">
         </div>
         <div class="field">
           <label><input type="checkbox" id="sLiOn" ${s.linkedin?.enabled?'checked':''}> לינקדין</label>
@@ -430,7 +431,7 @@ async function saveSettings(){
     },
     sources: {
       alljobs: { enabled: $('#sAjOn').checked, queries: parseLines($('#sAjQ').value),
-                 regions: $('#sAjR').value.split(',').map(x => x.trim()).filter(Boolean) },
+                 cities: $('#sAjR').value.split(',').map(x => x.trim()).filter(Boolean) },
       linkedin: { enabled: $('#sLiOn').checked, queries: parseLines($('#sLiQ').value),
                   since: $('#sLiSince').value },
       whatsapp: { enabled: $('#sWaOn').checked, groups },
